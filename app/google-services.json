@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "727904489588",
+    "project_id": "localizationapp-a4bfb",
+    "storage_bucket": "localizationapp-a4bfb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:727904489588:android:6c5715463c6d05ea3fc121",
+        "android_client_info": {
+          "package_name": "com.example.scanapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "727904489588-ib2p20ntk9vldf7b31ldvkrfa7glithu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNIeZPHe0c4xjmpJG5x8Ai3IHsHW4EXaU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "727904489588-ib2p20ntk9vldf7b31ldvkrfa7glithu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
