@@ -6,10 +6,19 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.telephony.CellIdentityGsm;
+import android.telephony.CellIdentityLte;
+import android.telephony.CellInfo;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoLte;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthLte;
+import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -25,12 +34,16 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     Button btnSend;
     TextView textLat;
     TextView textLon;
+    TextView textLte;
+    TextView textGsm;
+
 
 
     //GPS
@@ -39,18 +52,19 @@ public class MainActivity extends AppCompatActivity {
     LocationCallback locationCallback;
 
 
-    TextView textLteCid;
-
-
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         btnSend = findViewById(R.id.btn_start);
-        textLat = findViewById(R.id.text_loc_x);
-        textLon = findViewById(R.id.text_loc_y);
-        textLteCid = findViewById(R.id.text_lte_cdi);
+        textLat = findViewById(R.id.text_lat);
+        textLon = findViewById(R.id.text_lon);
+        textGsm = findViewById(R.id.text_gsm_data);
+        textLte = findViewById(R.id.text_lte_data);
+
+
 
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -72,127 +86,121 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-/*
-        String list = "";  //I'm just adding everything to a string to display, but you can do whatever
-        String list1="";
-        String list2="";
-
-        //get cell info
-        TelephonyManager tel = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
-        List<CellInfo> infos = tel.getAllCellInfo();
-
-
-        for (int i = 0; i<infos.size(); ++i)
-        {
-            try {
-                CellInfo info = infos.get(i);
-                //GSM
-
-                if (info instanceof CellInfoGsm)
-                {
-                    list += "Sitegsm_"+i + "\r\n";
-                    list += "Registered: " + info.isRegistered() + "\r\n";
-                    CellSignalStrengthGsm gsm = ((CellInfoGsm) info).getCellSignalStrength();
-                    CellIdentityGsm identityGsm = ((CellInfoGsm) info).getCellIdentity();
-                    list += "cellID: "+ identityGsm.getCid() + "\r\n";
-                    list += "dBm: " + gsm.getDbm() + "\r\n\r\n";
-
-                    textLteCid.setText(String.valueOf(identityGsm.getCid()));
-
-                    //call whatever you want from gsm / identitydGsm
-                }
-
-                //LTE
-
-                 if (info instanceof CellInfoLte)  //if LTE connection
-                {
-                    list1 += "Sitelte_"+i + "\r\n";
-                    list1 += "Registered: " + info.isRegistered() + "\r\n";
-                    CellSignalStrengthLte lte = ((CellInfoLte) info).getCellSignalStrength();
-                    CellIdentityLte identityLte = ((CellInfoLte) info).getCellIdentity();
-                    //call whatever you want from lte / identityLte
-                    list1 +="RSSI:  "+lte.getRssi();
-                    list1 += "CellID" +identityLte.getCi();
-                }
-
-                //3G
-                if (info instanceof CellInfoWcdma)  //if wcdma connection
-                {
-                    CellSignalStrengthWcdma wcdmaS = ((CellInfoWcdma) info).getCellSignalStrength();
-                    CellIdentityWcdma wcdmaid = ((CellInfoWcdma)info).getCellIdentity();
-                    list2 += "Sitewcdma_"+i + "\r\n";
-                    list2 += "Registered: " + info.isRegistered() + "\r\n";
-                    //call whatever you want from wcdmaS / wcdmaid
-
-                }
-
-
-
-            } catch (Exception ex) {
-                Log.i("neighboring error 2: " ,ex.getMessage());
-            }
-        }
-        //Log.d("Info display", list);//display everything.
-        //Log.i("Info1 display", list1);//display everything.
-
-        Log.d("Info2 display", list);//display everything.
-
-        Toast.makeText(MainActivity.this, "aa"+list,
-                Toast.LENGTH_LONG).show();
-
-
-
-
-       final TelephonyManager telephony = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (telephony.getPhoneType() == TelephonyManager.PHONE_TYPE_GSM) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
-            final GsmCellLocation location = (GsmCellLocation) telephony.getCellLocation();
-            if (location != null) {
-                textLteCid.setText(String.valueOf(location.getCid()));
-
-            }
-        }
-        */
-
-
 
         btnSend.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("MissingPermission")
             @Override
             public void onClick(View v) {
 
+
                 updateGPS();
-                fusedLocationProviderClient.requestLocationUpdates(locationRequest,locationCallback,null);
+                //infoGSMCell();
+                infoLTECell();
 
 
-
-
+                fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
 
 
                 String latitude = textLat.getText().toString();
                 String longitude = textLon.getText().toString();
+
+
                 String cellid = "aa";
 
-                    HashMap<String, String> coordinates = new HashMap<>();
-                    coordinates.put("Lat: ", latitude);
-                    coordinates.put("Lon: ", longitude);
-                    coordinates.put("CellID ", cellid);
-                    myRef.child(cellid).setValue(coordinates);
+                HashMap<String, String> coordinates = new HashMap<>();
+                coordinates.put("Lat: ", latitude);
+                coordinates.put("Lon: ", longitude);
+                coordinates.put("CellID ", cellid);
+                myRef.child(cellid).setValue(coordinates);
             }
+
         });
 
 
+    }
+
+
+
+    @SuppressLint("SetTextI18n")
+    private void infoLTECell(){
+
+        List<CellInfo> cellInfoLteList;
+        TelephonyManager telephonyManager;
+        telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        cellInfoLteList = telephonyManager.getAllCellInfo();
+        String listLTE = "";
+
+        if(cellInfoLteList!=null){
+
+            for(int i=0; i<cellInfoLteList.size(); ++i){
+
+                CellInfo infoLte = cellInfoLteList.get(i);
+
+                if(infoLte instanceof CellInfoLte) {
+                    listLTE += "Site " + (i+1) +": ";
+                    listLTE += "Registered: " + infoLte.isRegistered()+ ", ";
+                    CellSignalStrengthLte lte = ((CellInfoLte) infoLte).getCellSignalStrength();
+                    listLTE += "RSSI:  " + lte.getDbm()+", ";
+                    CellIdentityLte identityLte = ((CellInfoLte) infoLte).getCellIdentity();
+                    if(identityLte.getCi()==2147483647) {
+                        listLTE += "CellID: " + "unavailable" + "\r\n";
+                    }
+                    else {
+                        listLTE += "CellID:  " + identityLte.getCi() + "\r\n";
+                    }
+
+                }
+
+            }
+        }
+
+        textLte.setText(String.valueOf("Stacji LTE jest: "+" "+cellInfoLteList.size())+"\r\n"  +listLTE);
+
 
     }
+
+    @SuppressLint("SetTextI18n")
+    private void infoGSMCell(){
+        List<CellInfo> cellInfoGsmList;
+        TelephonyManager telephonyManager;
+        telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        cellInfoGsmList = telephonyManager.getAllCellInfo();
+
+        String listGSM="";
+
+        if(cellInfoGsmList!=null){
+            for(int i=0; i<cellInfoGsmList.size(); ++i){
+
+                CellInfo infoGSM = cellInfoGsmList.get(i);
+                if(infoGSM instanceof CellInfoGsm) {
+                    listGSM += "Site " + i + ": ";
+                    listGSM += "Registered: " + infoGSM.isRegistered() + " ";
+                    CellSignalStrengthGsm gsm = ((CellInfoGsm) infoGSM).getCellSignalStrength();
+                    listGSM += "RSSI: " + gsm.getDbm() + " ";
+                    CellIdentityGsm identityGsm = ((CellInfoGsm) infoGSM).getCellIdentity();
+                    if(identityGsm.getCid()==2147483647) {
+                        listGSM += "CellID " + "unavailable" + "\r\n";
+                    }
+                    else {
+                        listGSM += "CellID  " + identityGsm.getCid() + "\r\n";
+                    }
+                }
+            }
+        }
+        textGsm.setText(String.valueOf("Stacji GSM jest:  "+cellInfoGsmList.size())+"\r\n"+ listGSM);
+    }
+
+
 
     private void updateGPS()
     {
@@ -202,10 +210,8 @@ public class MainActivity extends AppCompatActivity {
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                 @Override
                 public void onSuccess(Location location) {
+
                     updateValues(location);
-
-
-
                 }
             });
         }
@@ -233,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
                 if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     updateGPS();
+
                 }
                 else
                 {

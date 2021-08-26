@@ -46,19 +46,24 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:id="@+id/text_loc_x" />
+            android:id="@+id/text_lat" />
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:id="@+id/text_loc_y"/>
+            android:id="@+id/text_lon"/>
     </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/text_lte_cdi"
+        android:id="@+id/text_gsm_data"
         />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/text_lte_data"/>
 
 
 
