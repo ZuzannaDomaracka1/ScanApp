@@ -44,8 +44,6 @@ public class MainActivity extends AppCompatActivity {
     TextView textLte;
     TextView textGsm;
 
-
-
     //GPS
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
@@ -63,9 +61,6 @@ public class MainActivity extends AppCompatActivity {
         textLon = findViewById(R.id.text_lon);
         textGsm = findViewById(R.id.text_gsm_data);
         textLte = findViewById(R.id.text_lte_data);
-
-
-
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference().child("Data from ScanApp");
@@ -97,16 +92,12 @@ public class MainActivity extends AppCompatActivity {
                 //infoGSMCell();
                 infoLTECell();
 
-
                 fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
-
 
                 String latitude = textLat.getText().toString();
                 String longitude = textLon.getText().toString();
 
-
                 String cellid = "aa";
-
                 HashMap<String, String> coordinates = new HashMap<>();
                 coordinates.put("Lat: ", latitude);
                 coordinates.put("Lon: ", longitude);
@@ -118,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
-
 
 
     @SuppressLint("SetTextI18n")
