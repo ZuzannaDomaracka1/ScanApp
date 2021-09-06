@@ -41,13 +41,24 @@ public class MainActivity extends AppCompatActivity {
     Button btnSend;
     TextView textLat;
     TextView textLon;
-    TextView textLte;
-    TextView textGsm;
+    TextView textCellId1;
+    TextView textCellId2;
+    TextView textCellId3;
+    TextView textCellId4;
+    TextView textRssi;
 
     //GPS
     LocationRequest locationRequest;
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationCallback locationCallback;
+
+    //CellInfo
+    List<CellInfo> cellInfoList;
+    TelephonyManager telephonyManager;
+    String listGSM = "";
+    String listLTE = "";
+    String listRssi = "";
+
 
 
     @SuppressLint("MissingPermission")
@@ -59,11 +70,17 @@ public class MainActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.btn_start);
         textLat = findViewById(R.id.text_lat);
         textLon = findViewById(R.id.text_lon);
-        textGsm = findViewById(R.id.text_gsm_data);
-        textLte = findViewById(R.id.text_lte_data);
+        textCellId1 = findViewById(R.id.text_cell_id_1);
+        textCellId2 = findViewById(R.id.text_cell_id_2);
+        textCellId3 = findViewById(R.id.text_cell_id_3);
+        textCellId4 = findViewById(R.id.text_cell_id_4);
+        textRssi = findViewById(R.id.text_rssi);
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference().child("Data from ScanApp");
+
+        telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+
 
         //GPS
         //noinspection deprecation
@@ -89,20 +106,19 @@ public class MainActivity extends AppCompatActivity {
 
 
                 updateGPS();
-                //infoGSMCell();
-                infoLTECell();
+                infoCell();
+
 
                 fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
 
                 String latitude = textLat.getText().toString();
                 String longitude = textLon.getText().toString();
 
-                String cellid = "aa";
+
                 HashMap<String, String> coordinates = new HashMap<>();
                 coordinates.put("Lat: ", latitude);
                 coordinates.put("Lon: ", longitude);
-                coordinates.put("CellID ", cellid);
-                myRef.child(cellid).setValue(coordinates);
+                myRef.setValue(coordinates);
             }
 
         });
@@ -111,19 +127,61 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    @SuppressLint("SetTextI18n")
-    private void infoLTECell(){
-
-        List<CellInfo> cellInfoLteList;
-        TelephonyManager telephonyManager;
-        telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-
-
+    private void infoCell() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
-        cellInfoLteList = telephonyManager.getAllCellInfo();
+        String list1= "";
+
+        cellInfoList = telephonyManager.getAllCellInfo();
+        for(int i=0; i<cellInfoList.size(); ++i)
+        {
+            CellInfo info = cellInfoList.get(i);
+
+            if (info instanceof CellInfoGsm) {
+                //listGSM+="Site_"+i +"\r\n";
+                // listGSM+="Registered:  "+info.isRegistered();
+
+                CellIdentityGsm cellid = ((CellInfoGsm) info).getCellIdentity();
+                list1 += "cellID: " + cellid.getCid() + "\r\n";
+
+                for(int k=0;k<5;k++) {
+                    CellSignalStrengthGsm gsm = ((CellInfoGsm) info).getCellSignalStrength();
+                    list1 += " " + gsm.getDbm() + ",";
+
+
+                }
+                textCellId1.setText(list1);
+
+                Toast.makeText(MainActivity.this,"Stacji GSM jest:" +cellInfoList.size(),Toast.LENGTH_SHORT).show();
+
+
+            }
+
+            //listGSM+="dbm "+gsm.getDbm();
+
+            else if (info instanceof CellInfoLte) {
+                listLTE += "Site_" + i + "\r\n";
+                listLTE += "Registered:  " + info.isRegistered();
+                CellSignalStrengthLte lte = ((CellInfoLte) info).getCellSignalStrength();
+                CellIdentityLte cellid = ((CellInfoLte) info).getCellIdentity();
+                listLTE += "cellId" + cellid.getCi();
+                listLTE += "dbm " + lte.getDbm();
+
+            }
+        }
+        }
+
+
+
+
+
+/*
+    @SuppressLint("SetTextI18n")
+    private void infoLTECell(){
+
+
         String listLTE = "";
 
         if(cellInfoLteList!=null){
@@ -150,47 +208,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        textLte.setText(String.valueOf("Stacji LTE jest: "+" "+cellInfoLteList.size())+"\r\n"  +listLTE);
+       // textLte.setText(String.valueOf("Stacji LTE jest: "+" "+cellInfoLteList.size())+"\r\n"  +listLTE);
 
 
-    }
-
-    @SuppressLint("SetTextI18n")
-    private void infoGSMCell(){
-        List<CellInfo> cellInfoGsmList;
-        TelephonyManager telephonyManager;
-        telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        cellInfoGsmList = telephonyManager.getAllCellInfo();
-
-        String listGSM="";
-
-        if(cellInfoGsmList!=null){
-            for(int i=0; i<cellInfoGsmList.size(); ++i){
-
-                CellInfo infoGSM = cellInfoGsmList.get(i);
-                if(infoGSM instanceof CellInfoGsm) {
-                    listGSM += "Site " + i + ": ";
-                    listGSM += "Registered: " + infoGSM.isRegistered() + " ";
-                    CellSignalStrengthGsm gsm = ((CellInfoGsm) infoGSM).getCellSignalStrength();
-                    listGSM += "RSSI: " + gsm.getDbm() + " ";
-                    CellIdentityGsm identityGsm = ((CellInfoGsm) infoGSM).getCellIdentity();
-                    if(identityGsm.getCid()==2147483647) {
-                        listGSM += "CellID " + "unavailable" + "\r\n";
-                    }
-                    else {
-                        listGSM += "CellID  " + identityGsm.getCid() + "\r\n";
-                    }
-                }
-            }
-        }
-        textGsm.setText(String.valueOf("Stacji GSM jest:  "+cellInfoGsmList.size())+"\r\n"+ listGSM);
-    }
-
-
+    }*/
 
     private void updateGPS()
     {
