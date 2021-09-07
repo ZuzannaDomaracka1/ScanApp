@@ -16,8 +16,11 @@ import android.telephony.CellIdentityLte;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoGsm;
 import android.telephony.CellInfoLte;
+import android.telephony.CellSignalStrength;
 import android.telephony.CellSignalStrengthGsm;
 import android.telephony.CellSignalStrengthLte;
+import android.telephony.PhoneStateListener;
+import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.Button;
@@ -58,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
     String listGSM = "";
     String listLTE = "";
     String listRssi = "";
-
 
 
     @SuppressLint("MissingPermission")
@@ -103,40 +105,92 @@ public class MainActivity extends AppCompatActivity {
             @SuppressLint("MissingPermission")
             @Override
             public void onClick(View v) {
-
-
                 updateGPS();
                 infoCell();
-
 
                 fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
 
                 String latitude = textLat.getText().toString();
                 String longitude = textLon.getText().toString();
-
+                String cellid = "aa";
 
                 HashMap<String, String> coordinates = new HashMap<>();
                 coordinates.put("Lat: ", latitude);
                 coordinates.put("Lon: ", longitude);
-                myRef.setValue(coordinates);
+                coordinates.put("CellID ", cellid);
+                myRef.child(cellid).setValue(coordinates);
             }
 
         });
 
-
     }
-
 
     private void infoCell() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
-        String list1= "";
+        final String[] list1 = {""};
+
+
+            cellInfoList = telephonyManager.getAllCellInfo();
+
+            telephonyManager.listen(new PhoneStateListener() {
+                @Override
+                public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+                    super.onSignalStrengthsChanged(signalStrength);
+                    Toast.makeText(MainActivity.this, "Signal strength changed", Toast.LENGTH_SHORT).show();
+
+                }
+
+
+                @Override
+                public void onCellInfoChanged(List<CellInfo> cellInfo) {
+                    // super.onCellInfoChanged(cellInfo);
+                    if (cellInfo != null) {
+                        Toast.makeText(MainActivity.this, "Stacji GSM jest:" + cellInfo.size(), Toast.LENGTH_SHORT).show();
+                        for (int i = 0; i < cellInfo.size(); ++i) {
+                            CellInfo info = cellInfo.get(i);
+
+                            if (info instanceof CellInfoGsm) {
+                                //listGSM+="Site_"+i +"\r\n";
+                                // listGSM+="Registered:  "+info.isRegistered();
+
+                                CellIdentityGsm cellid = ((CellInfoGsm) info).getCellIdentity();
+                                list1[0] += "cellID: " + cellid.getCid() + "\r\n";
+                                CellSignalStrengthGsm gsm = ((CellInfoGsm) info).getCellSignalStrength();
+                                list1[0] += " " + gsm.getDbm() + ",";
+
+
+                                textCellId1.setText(list1[0]);
+
+                                Toast.makeText(MainActivity.this, "Stacji GSM jest:" + cellInfo.size(), Toast.LENGTH_SHORT).show();
+
+
+                            }
+
+                        }
+                    }
+                }
+            }, PhoneStateListener.LISTEN_CELL_INFO | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+
+
+
+        }
+
+
+
+
+    //- - - - - - - - - - - CellInfo wersja bez 100 próbek - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    private void _infoCell_() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        String list1 = "";
 
         cellInfoList = telephonyManager.getAllCellInfo();
-        for(int i=0; i<cellInfoList.size(); ++i)
-        {
+        for (int i = 0; i < cellInfoList.size(); ++i) {
             CellInfo info = cellInfoList.get(i);
 
             if (info instanceof CellInfoGsm) {
@@ -146,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                 CellIdentityGsm cellid = ((CellInfoGsm) info).getCellIdentity();
                 list1 += "cellID: " + cellid.getCid() + "\r\n";
 
-                for(int k=0;k<5;k++) {
+                for (int k = 0; k < 5; k++) {
                     CellSignalStrengthGsm gsm = ((CellInfoGsm) info).getCellSignalStrength();
                     list1 += " " + gsm.getDbm() + ",";
 
@@ -154,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 textCellId1.setText(list1);
 
-                Toast.makeText(MainActivity.this,"Stacji GSM jest:" +cellInfoList.size(),Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Stacji GSM jest:" + cellInfoList.size(), Toast.LENGTH_SHORT).show();
 
 
             }
@@ -171,7 +225,10 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
-        }
+    }
+
+
+
 
 
 
@@ -202,9 +259,7 @@ public class MainActivity extends AppCompatActivity {
                     else {
                         listLTE += "CellID:  " + identityLte.getCi() + "\r\n";
                     }
-
                 }
-
             }
         }
 
@@ -212,6 +267,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     }*/
+
+
+
 
     private void updateGPS()
     {
