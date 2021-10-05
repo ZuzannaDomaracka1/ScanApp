@@ -62,10 +62,7 @@ public class MainActivity extends AppCompatActivity {
     boolean measurementEnabled = false;
     List<MeasurementCell> measurementCells = new ArrayList<>();
 
-
     Timer timer;
-    String listLTE = "";
-
 
     @SuppressLint("MissingPermission")
     @Override
@@ -137,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
     private void startMeasurement(){
         btnSend.setText("STOP");
         measurementLocation = currentLocation;
-        textStationsCount.setText("Searching");
+        textStationsCount.setText("Searching...");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         @SuppressLint("MissingPermission")
@@ -291,11 +288,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-
-
-
     @SuppressLint("MissingPermission")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -315,50 +307,5 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    //- - - - - - - - - - - CellInfo wersja bez 100 próbek - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    private void _infoCell_() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        String list1 = "";
-
-        cellInfoList = telephonyManager.getAllCellInfo();
-        for (int i = 0; i < cellInfoList.size(); ++i) {
-            CellInfo info = cellInfoList.get(i);
-
-            if (info instanceof CellInfoGsm) {
-                //listGSM+="Site_"+i +"\r\n";
-                // listGSM+="Registered:  "+info.isRegistered();
-
-                CellIdentityGsm cellid = ((CellInfoGsm) info).getCellIdentity();
-                list1 += "cellID: " + cellid.getCid() + "\r\n";
-
-                for (int k = 0; k < 5; k++) {
-                    CellSignalStrengthGsm gsm = ((CellInfoGsm) info).getCellSignalStrength();
-                    list1 += " " + gsm.getDbm() + ",";
-
-
-                }
-
-
-                Toast.makeText(MainActivity.this, "Stacji GSM jest:" + cellInfoList.size(), Toast.LENGTH_SHORT).show();
-
-
-            }
-
-            //listGSM+="dbm "+gsm.getDbm();
-
-            else if (info instanceof CellInfoLte) {
-                listLTE += "Site_" + i + "\r\n";
-                listLTE += "Registered:  " + info.isRegistered();
-                CellSignalStrengthLte lte = ((CellInfoLte) info).getCellSignalStrength();
-                CellIdentityLte cellid = ((CellInfoLte) info).getCellIdentity();
-                listLTE += "cellId" + cellid.getCi();
-                listLTE += "dbm " + lte.getDbm();
-
-            }
-        }
-    }
 }
