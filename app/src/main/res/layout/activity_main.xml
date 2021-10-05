@@ -52,35 +52,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:id="@+id/text_lon"/>
+
     </LinearLayout>
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/text_cell_id_1"
-        />
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/text_cell_id_2"
-        />
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/text_cell_id_3"
-        />
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/text_cell_id_4"
+        android:id="@+id/text_stations_count"
+        android:layout_margin="10dp"
         />
 
-        />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="30dp"
-        android:id="@+id/text_rssi"/>
 
 
 
