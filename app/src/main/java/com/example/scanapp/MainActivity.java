@@ -11,13 +11,10 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.telephony.CellIdentityGsm;
-import android.telephony.CellIdentityLte;
+import android.os.CountDownTimer;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoGsm;
 import android.telephony.CellInfoLte;
-import android.telephony.CellSignalStrengthGsm;
-import android.telephony.CellSignalStrengthLte;
 import android.telephony.TelephonyManager;
 import android.view.View;
 import android.view.WindowManager;
@@ -43,10 +40,12 @@ public class MainActivity extends AppCompatActivity {
     private  static final int MEASUREMENT_PERIOD = 1000;
     private static final int MAX_MEASUREMENT_PER_CELL = 100;
 
+
     Button btnSend;
     TextView textLat;
     TextView textLon;
     TextView textStationsCount;
+    TextView text;
 
     //GPS
     LocationRequest locationRequest;
@@ -63,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
     List<MeasurementCell> measurementCells = new ArrayList<>();
 
     Timer timer;
+    CountDownTimer countDownTimer;
+    int aa;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         textLat = findViewById(R.id.text_lat);
         textLon = findViewById(R.id.text_lon);
         textStationsCount = findViewById(R.id.text_stations_count);
+        text = findViewById(R.id.text);
 
 
         telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
@@ -137,6 +139,9 @@ public class MainActivity extends AppCompatActivity {
         textStationsCount.setText("Searching...");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+
+
+
         @SuppressLint("MissingPermission")
         List<CellInfo> cellInfoList = telephonyManager.getAllCellInfo();
         for (CellInfo info : cellInfoList){
@@ -150,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     MeasurementCell measurementCell = new MeasurementCell();
                     measurementCell.cellId = cellInfoGsm.getCellIdentity().getCid();
                     measurementCells.add(measurementCell);
+
                 }
             }
             if(info instanceof CellInfoLte){
@@ -165,10 +171,17 @@ public class MainActivity extends AppCompatActivity {
         }
         if(measurementCells.size()>0)
         {
+            // for(int i=0;i<measurementCells.size();i++){
+            //   Log.i("ll", String.valueOf(measurementCells.get(i)));
+            //}
+            startTimer();
+
+
             collectMeasurementsForCells();
         }
         else
         {
+
             stopMeasurement();
         }
 
@@ -177,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
     private void stopMeasurement(){
         btnSend.setText("START");
         measurementLocation = null;
+        stopTimer();
         measurementCells.clear();
         textStationsCount.setText("");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -187,13 +201,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
     private void collectMeasurementsForCells(){
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 try {
+
                     TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
                     @SuppressLint("MissingPermission")
                     List<CellInfo> cellInfoList =telephonyManager.getAllCellInfo();
@@ -201,64 +215,56 @@ public class MainActivity extends AppCompatActivity {
                     {
                         for(int i=0;i<cellInfoList.size();i++)
                         {
-                        CellInfo info = cellInfoList.get(i);
-                        if(info instanceof CellInfoGsm){
-                            CellInfoGsm cellInfoGsm = (CellInfoGsm) info;
-                            if(measurementCells.stream().allMatch(m -> m.measurementsList.size() >= MAX_MEASUREMENT_PER_CELL))
-                            {
-                                if(timer!= null)
+                            CellInfo info = cellInfoList.get(i);
+                            if(info instanceof CellInfoGsm){
+                                CellInfoGsm cellInfoGsm = (CellInfoGsm) info;
+                                // int aa = Integer.parseInt(text.getText().toString());
+
+                                if(measurementCells.stream().allMatch(m -> m.measurementsList.size() >= MAX_MEASUREMENT_PER_CELL || (m.measurementsList.size()>50 && aa == 0 )))
                                 {
-                                    runOnUiThread(() -> {
-                                        putDataToFirebase();
-                                    });
-                                    timer.cancel();
-                                    timer = null;
-                                }
-                            }
-                            else
-                            {
-                                measurementCells.stream().filter(m -> m.cellId == cellInfoGsm.getCellIdentity().getCid()
-                                && m.measurementsList.size() < MAX_MEASUREMENT_PER_CELL).forEach(m->m.measurementsList.add(cellInfoGsm.getCellSignalStrength().getDbm()));
-                                runOnUiThread(() -> {
-                                    String measurementText = "";
-                                    for (MeasurementCell m : measurementCells) {
-                                        measurementText = new StringBuilder().append(measurementText).append(m.cellId).append(": ").append(m.measurementsList.size()).append("/").append(MAX_MEASUREMENT_PER_CELL).append("\n").toString();
+                                    if(timer!=null)
+                                    {
+                                        runOnUiThread(() -> {
+                                            putDataToFirebase();
+                                        });
+                                        timer.cancel();
+                                        timer = null;
                                     }
-                                    textStationsCount.setText(measurementText);
-                                });
-                            }
-                        }
-                        else   if(info instanceof CellInfoLte){
-                            CellInfoLte cellInfoLte = (CellInfoLte) info;
-                            if(measurementCells.stream().allMatch(m -> m.measurementsList.size() >= MAX_MEASUREMENT_PER_CELL))
-                            {
-                                if(timer!= null)
-                                {
-                                    runOnUiThread(() -> {
-                                        putDataToFirebase();
-                                    });
-                                    timer.cancel();
-                                    timer = null;
                                 }
+                                else {
+
+                                    // dla kazdego cellid ->rssi
+                                    // z tablicy measerementCells która zawiera wszytskie cellid dodajemy odpowiadające próki rssi przechowywane w measurementList
+
+                                    measurementCells.stream().filter(m -> m.cellId == cellInfoGsm.getCellIdentity().getCid()
+                                            && m.measurementsList.size() < MAX_MEASUREMENT_PER_CELL || aa == 00) .forEach(m -> m.measurementsList.add(cellInfoGsm.getCellSignalStrength().getDbm()));
+
+                                    runOnUiThread(() -> {
+
+                                        String measurementText = "";
+                                        for (MeasurementCell m : measurementCells) {
+                                            measurementText = new StringBuilder().append(measurementText).append(m.cellId).append(": ").append(m.measurementsList.size()).append("/").append(MAX_MEASUREMENT_PER_CELL).append("\n").toString();
+
+
+                                        }
+                                        if(aa==0) {
+                                            measurementCells.stream().filter((a -> a.measurementsList.size() <= 50)).forEach(a -> a.measurementsList.removeAll(a.measurementsList));
+                                        }
+                                        textStationsCount.setText(measurementText);
+
+                                    });
+
+
+                                }
+
                             }
-                            else
-                            {
-                                measurementCells.stream().filter(m -> m.cellId == cellInfoLte.getCellIdentity().getCi()
-                                        && m.measurementsList.size() < MAX_MEASUREMENT_PER_CELL).forEach(m->m.measurementsList.add(cellInfoLte.getCellSignalStrength().getDbm()));
-                                runOnUiThread(() -> {
-                                    String measurementText = "";
-                                    for (MeasurementCell m : measurementCells) {
-                                        measurementText = new StringBuilder().append(measurementText).append(m.cellId).append(": ").append(m.measurementsList.size()).append("/").append(MAX_MEASUREMENT_PER_CELL).append("\n").toString();
-                                    }
-                                    textStationsCount.setText(measurementText);
-                                });
-                            }
-                        }
+
                         }
                     }
 
                 }
                 catch (Exception e){
+
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error while getting cells info", Toast.LENGTH_SHORT).show());
                 }
             }
@@ -268,11 +274,12 @@ public class MainActivity extends AppCompatActivity {
     private void putDataToFirebase(){
 
         DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("Measurements");
+
         String key  = myRef.push().getKey();
         LocationMeasurement locationMeasurement = new LocationMeasurement();
         locationMeasurement.lat = measurementLocation.getLatitude();
         locationMeasurement.lon = measurementLocation.getLongitude();
-        locationMeasurement.measurementCells = measurementCells;
+        locationMeasurement.measurementAllCells = measurementCells;
         myRef.child(key).setValue(locationMeasurement);
         Toast.makeText(MainActivity.this, "Data sent to the Firebase ", Toast.LENGTH_SHORT).show();
         measurementEnabled = false;
@@ -303,6 +310,37 @@ public class MainActivity extends AppCompatActivity {
                 }
         }
     }
+
+    public void startTimer() {
+
+        countDownTimer =  new CountDownTimer(120000, 1000) {
+
+
+            public void onTick(long millisUntilFinished) {
+                int total = (int) (millisUntilFinished / 1000);
+
+                text.setText("Seconds remaining: " +total);
+                aa = Integer.parseInt(String.valueOf(total));
+            }
+
+            @Override
+            public void onFinish() {
+                text.setText("Seconds remaining: 0");
+
+            }
+
+
+        }.start();
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void stopTimer(){
+
+        countDownTimer.cancel();
+        text.setText("RESET");
+    }
+
+
 
 
 

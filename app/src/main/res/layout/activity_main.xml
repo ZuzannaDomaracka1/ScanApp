@@ -60,6 +60,11 @@
         android:id="@+id/text_stations_count"
         android:layout_margin="10dp"
         />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/text"
+        android:layout_margin="10dp"/>
 
 
 

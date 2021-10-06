@@ -6,7 +6,7 @@ public class LocationMeasurement {
 
     public double lon;
     public double lat;
-    public List<MeasurementCell> measurementCells;
+    public List<MeasurementCell> measurementAllCells;
 
 
 }
