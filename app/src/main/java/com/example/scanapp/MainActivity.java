@@ -341,7 +341,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startTimer() {
 
-        countDownTimer =  new CountDownTimer(100000, 1000) {
+        countDownTimer =  new CountDownTimer(150000, 1000) {
 
 
             @SuppressLint("SetTextI18n")
