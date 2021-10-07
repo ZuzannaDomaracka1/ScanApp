@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
     Timer timer;
     CountDownTimer countDownTimer;
-    int aa;
+    int downTimer;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -76,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         textLon = findViewById(R.id.text_lon);
         textStationsCount = findViewById(R.id.text_stations_count);
         text = findViewById(R.id.text);
-
 
         telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 
@@ -140,8 +139,6 @@ public class MainActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 
-
-
         @SuppressLint("MissingPermission")
         List<CellInfo> cellInfoList = telephonyManager.getAllCellInfo();
         for (CellInfo info : cellInfoList){
@@ -171,17 +168,11 @@ public class MainActivity extends AppCompatActivity {
         }
         if(measurementCells.size()>0)
         {
-            // for(int i=0;i<measurementCells.size();i++){
-            //   Log.i("ll", String.valueOf(measurementCells.get(i)));
-            //}
             startTimer();
-
-
             collectMeasurementsForCells();
         }
         else
         {
-
             stopMeasurement();
         }
 
@@ -198,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
             timer.cancel();
             timer = null;
         }
-
     }
 
     private void collectMeasurementsForCells(){
@@ -218,11 +208,10 @@ public class MainActivity extends AppCompatActivity {
                             CellInfo info = cellInfoList.get(i);
                             if(info instanceof CellInfoGsm){
                                 CellInfoGsm cellInfoGsm = (CellInfoGsm) info;
-                                // int aa = Integer.parseInt(text.getText().toString());
 
-                                if(measurementCells.stream().allMatch(m -> m.measurementsList.size() >= MAX_MEASUREMENT_PER_CELL || (m.measurementsList.size()>50 && aa == 0 )))
+                                if(measurementCells.stream().allMatch(m -> m.measurementsList.size() >= MAX_MEASUREMENT_PER_CELL ) || downTimer ==0 )
                                 {
-                                    if(timer!=null)
+                                    if(timer!= null )
                                     {
                                         runOnUiThread(() -> {
                                             putDataToFirebase();
@@ -236,24 +225,64 @@ public class MainActivity extends AppCompatActivity {
                                     // dla kazdego cellid ->rssi
                                     // z tablicy measerementCells która zawiera wszytskie cellid dodajemy odpowiadające próki rssi przechowywane w measurementList
 
-                                    measurementCells.stream().filter(m -> m.cellId == cellInfoGsm.getCellIdentity().getCid()
-                                            && m.measurementsList.size() < MAX_MEASUREMENT_PER_CELL || aa == 00) .forEach(m -> m.measurementsList.add(cellInfoGsm.getCellSignalStrength().getDbm()));
+                                    measurementCells.stream().filter(m -> m.cellId == cellInfoGsm.getCellIdentity().getCid() && m.measurementsList.size() < MAX_MEASUREMENT_PER_CELL
+                                            ).forEach(m -> m.measurementsList.add(cellInfoGsm.getCellSignalStrength().getDbm()));
+
 
                                     runOnUiThread(() -> {
 
                                         String measurementText = "";
                                         for (MeasurementCell m : measurementCells) {
-                                            measurementText = new StringBuilder().append(measurementText).append(m.cellId).append(": ").append(m.measurementsList.size()).append("/").append(MAX_MEASUREMENT_PER_CELL).append("\n").toString();
+                                            measurementText = measurementText + m.cellId + ": " + m.measurementsList.size() + "/" + MAX_MEASUREMENT_PER_CELL + "\n";
 
-
-                                        }
-                                        if(aa==0) {
-                                            measurementCells.stream().filter((a -> a.measurementsList.size() <= 50)).forEach(a -> a.measurementsList.removeAll(a.measurementsList));
                                         }
                                         textStationsCount.setText(measurementText);
+                                        if(downTimer == 1) {
+                                            measurementCells.removeIf(m->m.measurementsList.size()<=50);
+                                        }
 
                                     });
 
+                                }
+
+                            }
+                            if(info instanceof CellInfoLte){
+                                CellInfoLte cellInfoLte = (CellInfoLte) info;
+
+                                if(measurementCells.stream().allMatch(m -> m.measurementsList.size() >= MAX_MEASUREMENT_PER_CELL ) || downTimer ==0 )
+                                {
+                                    if(timer!= null )
+                                    {
+                                        runOnUiThread(() -> {
+                                            putDataToFirebase();
+                                        });
+                                        timer.cancel();
+                                        timer = null;
+                                    }
+                                }
+                                else {
+
+                                    // dla kazdego cellid ->rssi
+                                    // z tablicy measerementCells która zawiera wszytskie cellid dodajemy odpowiadające próki rssi przechowywane w measurementList
+
+                                    measurementCells.stream().filter(m -> m.cellId == cellInfoLte.getCellIdentity().getCi() && m.measurementsList.size() < MAX_MEASUREMENT_PER_CELL
+                                    ).forEach(m -> m.measurementsList.add(cellInfoLte.getCellSignalStrength().getDbm()));
+
+
+                                    runOnUiThread(() -> {
+
+                                        String measurementText = "";
+                                        for (MeasurementCell m : measurementCells) {
+                                            measurementText = measurementText + m.cellId + ": " + m.measurementsList.size() + "/" + MAX_MEASUREMENT_PER_CELL + "\n";
+
+                                        }
+                                        textStationsCount.setText(measurementText);
+                                        if(downTimer == 1) {
+                                            measurementCells.removeIf(m->m.measurementsList.size()<=50);
+                                        }
+
+
+                                    });
 
                                 }
 
@@ -275,11 +304,12 @@ public class MainActivity extends AppCompatActivity {
 
         DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("Measurements");
 
-        String key  = myRef.push().getKey();
+        String key = myRef.push().getKey();
         LocationMeasurement locationMeasurement = new LocationMeasurement();
         locationMeasurement.lat = measurementLocation.getLatitude();
         locationMeasurement.lon = measurementLocation.getLongitude();
         locationMeasurement.measurementAllCells = measurementCells;
+        assert key != null;
         myRef.child(key).setValue(locationMeasurement);
         Toast.makeText(MainActivity.this, "Data sent to the Firebase ", Toast.LENGTH_SHORT).show();
         measurementEnabled = false;
@@ -292,8 +322,6 @@ public class MainActivity extends AppCompatActivity {
         textLat.setText(String.valueOf(location.getLatitude()));
         textLon.setText(String.valueOf(location.getLongitude()));
     }
-
-
 
     @SuppressLint("MissingPermission")
     @Override
@@ -313,23 +341,23 @@ public class MainActivity extends AppCompatActivity {
 
     public void startTimer() {
 
-        countDownTimer =  new CountDownTimer(120000, 1000) {
+        countDownTimer =  new CountDownTimer(100000, 1000) {
 
 
+            @SuppressLint("SetTextI18n")
             public void onTick(long millisUntilFinished) {
                 int total = (int) (millisUntilFinished / 1000);
 
                 text.setText("Seconds remaining: " +total);
-                aa = Integer.parseInt(String.valueOf(total));
+                downTimer = Integer.parseInt(String.valueOf(total));
             }
 
+            @SuppressLint("SetTextI18n")
             @Override
             public void onFinish() {
                 text.setText("Seconds remaining: 0");
 
             }
-
-
         }.start();
     }
 
@@ -339,11 +367,5 @@ public class MainActivity extends AppCompatActivity {
         countDownTimer.cancel();
         text.setText("RESET");
     }
-
-
-
-
-
-
 
 }
