@@ -302,15 +302,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void putDataToFirebase(){
 
-        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("Measurements");
+        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("MeasurementCells");
 
-        String key = myRef.push().getKey();
+        /*String key = myRef.push().getKey();
         LocationMeasurement locationMeasurement = new LocationMeasurement();
         locationMeasurement.lat = measurementLocation.getLatitude();
         locationMeasurement.lon = measurementLocation.getLongitude();
-        locationMeasurement.measurementAllCells = measurementCells;
-        assert key != null;
-        myRef.child(key).setValue(locationMeasurement);
+        locationMeasurement.measurementAllCells = measurementCells*/
+        for(MeasurementCell m : measurementCells) {
+            String key = myRef.push().getKey();
+            m.lat = measurementLocation.getLatitude();
+            m.lon = measurementLocation.getLongitude();
+            assert key != null;
+            myRef.child(key).setValue(m);
+        }
         Toast.makeText(MainActivity.this, "Data sent to the Firebase ", Toast.LENGTH_SHORT).show();
         measurementEnabled = false;
         stopMeasurement();
@@ -347,7 +352,6 @@ public class MainActivity extends AppCompatActivity {
             @SuppressLint("SetTextI18n")
             public void onTick(long millisUntilFinished) {
                 int total = (int) (millisUntilFinished / 1000);
-
                 text.setText("Seconds remaining: " +total);
                 downTimer = Integer.parseInt(String.valueOf(total));
             }
